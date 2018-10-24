@@ -1,5 +1,9 @@
+# Gilat Mandelbaum Set2
+
 from nltk.tokenize import word_tokenize
 import numpy as np
+import nltk
+#nltk.download()
 
 def data_stream():
     """Stream the data in 'leipzig100k.txt' """
@@ -24,11 +28,46 @@ def bloom_filter_set():
 # family should be able to hash a word from the data stream to a number in the
 # appropriate range needed.
 
+def findPrime(n):
+    """Returns a prime number larger than n
+    """
+    def isPrime(k):
+        import math
+        for divisor in range(2, round(math.sqrt(n)-0.5)):
+            if k%divisor==0:
+                return False
+        return True
+    if n%2==0:
+        candidate = n+1
+    else:
+        candidate = n
+    while not isPrime(candidate):
+        candidate += 2
+    return candidate  
+
+class Hash(object):
+    def __init__(self, size):
+        self.size = size
+        self.bits = [0]*size
+        
+    def add(self, num):
+        num = num % self.size
+        self.bits[num] = 1
+        
+    def get(self, num):
+        num = num % self.size
+        return self.bits[num]
+
 def uhf(rng):
     """Returns a hash function that can map a word to a number in the range
     0 - rng
     """
-    pass
+    p = findPrime(rng)
+    m = 2*rng
+    a = np.random.randint(1,p)
+    b = np.random.randint(0,p)
+    return lambda x: ((a*x+b)%p)%m
+
 
 ############### 
 
@@ -38,16 +77,59 @@ from bitarray import bitarray
 size = 2**18   # size of the filter
 
 hash_fns = [None, None, None, None, None]  # place holder for hash functions
-bloom_filter = None
+bloom_filter = [0] * size
 num_words = 0         # number in data stream
 num_words_in_set = 0  # number in Bloom filter's set
 
+# Create 5 hash functions
+for i in range(len(hash_fns)):
+    hash_fns[i] = uhf(size/5)
+
 #for word in bloom_filter_set(): # add the word to the filter by hashing etc.
-#    pass 
+#    pass
 
-#for word in data_stream():  # check for membership in the Bloom filter
-#    pass 
+# Create a list of words from the bloom_filter_set
+list_words=[]
+for word in bloom_filter_set():
+    list_words.append(word)
 
+# Create a list of the numerical identities for each word for hashing
+vecs = list(range(len(list_words)))
+
+# Create an array for the words that are placed by the hash function.
+word_values = [0] * size
+# Use the 5 hash functions on the bloom_filter_set words, place them into bloom_filter array and the words that correspond into the other list
+for word in vecs:
+    for h in hash_fns:
+        x = int(h(word) % size)
+        bloom_filter[x] = 1
+        word_values[x] = list_words[word]
+        num_words_in_set += 1
+
+# Do the same or the data_stream() words
+list_words_stream =[]
+for word in data_stream():
+    list_words_stream.append(word)
+vecs_stream = list(range(len(list_words_stream)))
+
+num_words=0
+data_filter = [0]*size
+word_values_stream = [0]*size
+for word in vecs_stream:
+    for h in hash_fns:
+        x = int(h(word) % size)
+        data_filter[x] = 1
+        word_values_stream[x] = list_words_stream[word]
+        num_words += 1
+        
+# Count number of false positives.  
+fp = 0
+for i in range(len(bloom_filter)):
+    if bloom_filter[i] == 1 and data_filter[i] == 1 and word_values_stream[i] != word_values[i]:
+        fp += 1
+
+            
+print('False Positives:',fp)
 print('Total number of words in stream = %s'%(num_words,))
 print('Total number of words in stream = %s'%(num_words_in_set,))
       

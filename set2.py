@@ -87,25 +87,47 @@ for i in range(len(hash_fns)):
 
 #for word in bloom_filter_set(): # add the word to the filter by hashing etc.
 #    pass
-# Create another array to place the word in the same position it'd be in the bloom filter.
-bloom_filter_words=[0]*size
-for word in bloom_filter_set():
-    num_words_in_set += 1
-    for h in hash_fns:
-        x = int(h(num_words_in_set) % size)
-        bloom_filter_words[x] = word
-        bloom_filter[x] = True
-fp=[]
-for word in data_stream(): 
-    num_words += 1
-    for h in hash_fns:
-        y = int(h(num_words) % size)
-    if bloom_filter[y] == True and word != bloom_filter_words[y]:
-        fp.append(y)
-fp = list(set(fp))
-fp_count=len(fp)
+# Create dictionary that holds all words in data set as keys, and values as list of positions declared by the hash functions
+dictionary = dict()
 
-print('False Positives count:',fp_count)
+# Loop through bloom_filter_set
+for word in bloom_filter_set():
+    num_words_in_set += 1 # count number of words
+    dictionary[word] = []
+    for h in hash_fns:
+        x = int(h(num_words_in_set) % size) # utilize hash functions
+        dictionary[word].append(x) # save position in dictionary list
+        bloom_filter[x] = True #add to bloom filter array
+
+# Create another dictionary to collect words that are not in the bloom_filter_set dictionary, along with list of their positions declared by the hash functions
+dict_stream = dict()
+
+# Loop through data stream 
+for word in data_stream(): 
+    num_words += 1 # count number of words
+    if word not in dictionary.keys(): # If word not in dictionary, add to data stream's dictionary
+        dict_stream[word]=[]
+        for h in hash_fns:
+            y = int(h(num_words) % size)
+            dict_stream[word].append(y)
+    else:
+        pass
+
+# Count number of faLse positives
+fp = 0 # False positives counter
+for key in dict_stream.keys():
+    count_p = 0 # Counts number of bloom filter positions where the position is True
+    for i in dict_stream[key]:
+        if bloom_filter[i] == True:
+            count_p += 1
+        else:
+            pass
+        if count_p == 5: # If all 5 positions were taken place, then counts as false positive
+            fp += 1
+        else:
+            pass
+            
+print('False Positives count:',fp)
 print('Total number of words in stream = %s'%(num_words,))
 print('Total number of words in stream = %s'%(num_words_in_set,))
       

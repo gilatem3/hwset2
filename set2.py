@@ -77,59 +77,35 @@ from bitarray import bitarray
 size = 2**18   # size of the filter
 
 hash_fns = [None, None, None, None, None]  # place holder for hash functions
-bloom_filter = [0] * size
+bloom_filter = bitarray(size)
 num_words = 0         # number in data stream
 num_words_in_set = 0  # number in Bloom filter's set
 
 # Create 5 hash functions
 for i in range(len(hash_fns)):
-    hash_fns[i] = uhf(size/5)
+    hash_fns[i] = uhf((size-1)/5)
 
 #for word in bloom_filter_set(): # add the word to the filter by hashing etc.
 #    pass
-
-# Create a list of words from the bloom_filter_set
-list_words=[]
+# Create another array to place the word in the same position it'd be in the bloom filter.
+bloom_filter_words=[0]*size
 for word in bloom_filter_set():
-    list_words.append(word)
-
-# Create a list of the numerical identities for each word for hashing
-vecs = list(range(len(list_words)))
-
-# Create an array for the words that are placed by the hash function.
-word_values = [0] * size
-# Use the 5 hash functions on the bloom_filter_set words, place them into bloom_filter array and the words that correspond into the other list
-for word in vecs:
+    num_words_in_set += 1
     for h in hash_fns:
-        x = int(h(word) % size)
-        bloom_filter[x] = 1
-        word_values[x] = list_words[word]
-        num_words_in_set += 1
-
-# Do the same or the data_stream() words
-list_words_stream =[]
-for word in data_stream():
-    list_words_stream.append(word)
-vecs_stream = list(range(len(list_words_stream)))
-
-num_words=0
-data_filter = [0]*size
-word_values_stream = [0]*size
-for word in vecs_stream:
+        x = int(h(num_words_in_set) % size)
+        bloom_filter_words[x] = word
+        bloom_filter[x] = True
+fp=[]
+for word in data_stream(): 
+    num_words += 1
     for h in hash_fns:
-        x = int(h(word) % size)
-        data_filter[x] = 1
-        word_values_stream[x] = list_words_stream[word]
-        num_words += 1
-        
-# Count number of false positives.  
-fp = 0
-for i in range(len(bloom_filter)):
-    if bloom_filter[i] == 1 and data_filter[i] == 1 and word_values_stream[i] != word_values[i]:
-        fp += 1
+        y = int(h(num_words) % size)
+    if bloom_filter[y] == True and word != bloom_filter_words[y]:
+        fp.append(y)
+fp = list(set(fp))
+fp_count=len(fp)
 
-            
-print('False Positives:',fp)
+print('False Positives count:',fp_count)
 print('Total number of words in stream = %s'%(num_words,))
 print('Total number of words in stream = %s'%(num_words_in_set,))
       

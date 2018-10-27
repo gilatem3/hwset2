@@ -70,7 +70,7 @@ def uhf(rng):
 
 
 ############### 
-
+'''
 ################### Part 1 ######################
 
 from bitarray import bitarray
@@ -130,24 +130,62 @@ for key in dict_stream.keys():
 print('False Positives count:',fp)
 print('Total number of words in stream = %s'%(num_words,))
 print('Total number of words in stream = %s'%(num_words_in_set,))
-      
+'''      
 ################### Part 2 ######################
 
 hash_range = 24 # number of bits in the range of the hash functions
 fm_hash_functions = [None]*35  # Create the appropriate hashes here
+
+# Create 35 hash functions
+for i in range(len(fm_hash_functions)):
+    fm_hash_functions[i] = uhf(hash_range)
+# Split to 7 groups
+fm_hash_functions1 = fm_hash_functions[:5]
+fm_hash_functions2 = fm_hash_functions[5:10]
+fm_hash_functions3 = fm_hash_functions[10:15]
+fm_hash_functions4 = fm_hash_functions[15:20]
+fm_hash_functions5 = fm_hash_functions[20:25]
+fm_hash_functions6 = fm_hash_functions[25:30]
+fm_hash_functions7 = fm_hash_functions[30:]
+
+# Create list of all hash function groups; easier to loop through.
+all_hash = [fm_hash_functions1,fm_hash_functions2,fm_hash_functions3,fm_hash_functions4,fm_hash_functions5,fm_hash_functions6,fm_hash_functions7]
+
 
 def num_trailing_bits(n):
     """Returns the number of trailing zeros in bin(n)
 
     n: integer
     """
-    pass
+    count = 0
+    value = str(n) # Convert numeric bits into string
+    for i in range(1,len(value)): # Check for trailing 0s, breaks if not 0
+        if value[-i] == '0':
+            count+=1
+        else:
+            break
+    
+    if count == len(value)-1: # if count is equal to the length of the string, that means all values are 0, but count will equal 0
+        count = 0
+    return count
 
-num_distinct = 0
 
-#for word in data_stream(): # Implement the Flajolet-Martin algorithm
-#    pass
-
+num_word_fm = 0
+distinct_average = [] # Holds the average number of distinct words for each group
+for h in all_hash:
+    distinct_per_group = [] # Holds the number of distinct words per function in a group
+    for funct in h:
+        zeroes = [] # Holds the number of trailing zeroes per word in the hash function
+        for word in data_stream(): # Use hash function as previous part
+            num_word_fm += 1
+            x = (funct(num_word_fm) % hash_range) 
+            num = format(x, '024b') # Format word into bits
+            zeroes.append(num_trailing_bits(num)) # use num_trailing_bits function
+        distinct_per_group.append(2**max(zeroes)) # Find number of distinct groups
+    distinct_average.append(sum(distinct_per_group)/5) # Find average number of distinct words per group
+            
+distinct_average.sort() # Sort averages in numerical order
+num_distinct = distinct_average[3]   # postion 3 shows the median. 
 print("Estimate of number of distinct elements = %s"%(num_distinct,))
 
 ################### Part 3 ######################

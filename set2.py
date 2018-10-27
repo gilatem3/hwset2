@@ -130,7 +130,7 @@ for key in dict_stream.keys():
 print('False Positives count:',fp)
 print('Total number of words in stream = %s'%(num_words,))
 print('Total number of words in stream = %s'%(num_words_in_set,))
-'''      
+     
 ################### Part 2 ######################
 
 hash_range = 24 # number of bits in the range of the hash functions
@@ -167,7 +167,7 @@ def num_trailing_bits(n):
     
     if count == len(value)-1: # if count is equal to the length of the string, that means all values are 0, but count will equal 0
         count = 0
-    return count
+    return cwordount
 
 
 num_word_fm = 0
@@ -187,7 +187,7 @@ for h in all_hash:
 distinct_average.sort() # Sort averages in numerical order
 num_distinct = distinct_average[3]   # postion 3 shows the median. 
 print("Estimate of number of distinct elements = %s"%(num_distinct,))
-
+'''
 ################### Part 3 ######################
 
 var_reservoir = [0]*512
@@ -195,9 +195,29 @@ second_moment = 0
 third_moment = 0
 
 # You can use numpy.random's API for maintaining the reservoir of variables
+# Create list of random indicies from the length of data_stream
+import random
+words = list(range(2059555))
+random.shuffle(words)
+var_reservoir = sorted(words[:len(var_reservoir)]) # Add random indicies to reservoir
 
 #for word in data_stream(): # Imoplement the AMS algorithm here
-#    pass 
+#    pass   
+variables = {} # Dictionary to hold the words in positions as keys and frequency as values
+count = 0
+# Loop through data stream, if that word index is in var_reservoir, start counting how many times that word appears.
+for word in data_stream():
+    count += 1
+    if count in var_reservoir and word not in variables:
+        variables[word] = 0
+    if word in variables:
+        variables[word] += 1
+        
+#  Equation for second moment: takes sum of each key's value
+second_moment = int((len(variables)) * sum((2 * v - 1) for v in variables.values())) 
+# Equation for third moment comes from second moment where 2v-1 = v**2-(v-1)**2. For 3: v**3-(v-1)**3
+third_moment =  int((len(variables)) * sum((3 * v**2 - 3*v + 1) for v in variables.values())) # Equation for third moment
+
       
 print("Estimate of second moment = %s"%(second_moment,))
 print("Estimate of third moment = %s"%(third_moment,))
